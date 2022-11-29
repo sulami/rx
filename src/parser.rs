@@ -6,7 +6,7 @@ use nom::multi::many1;
 use nom::sequence::{delimited, preceded, terminated};
 use nom::IResult;
 
-use crate::expr::{Atom, Class, Expr};
+use crate::expr::{Assertion, Atom, CharClass, Expr};
 
 pub fn parse(i: &str) -> IResult<&str, Expr> {
     terminated(parse_expr, eof)(i)
@@ -21,7 +21,10 @@ fn parse_expr(i: &str) -> IResult<&str, Expr> {
         parse_zero_or_more_reluctant,
         parse_one_or_more,
         parse_one_or_more_reluctant,
-        parse_atom,
+        parse_not,
+        parse_any,
+        parse_assertion,
+        parse_atom_expr,
     ))(i)
 }
 
@@ -50,6 +53,31 @@ fn parse_or(i: &str) -> IResult<&str, Expr> {
             char(')'),
         ),
         |exprs| Expr::Or(exprs),
+    )(i)
+}
+
+fn parse_any(i: &str) -> IResult<&str, Expr> {
+    map(
+        delimited(
+            char('('),
+            preceded(
+                alt((tag("any"), tag("in"), tag("char"))),
+                many1(preceded(multispace1, parse_atom)),
+            ),
+            char(')'),
+        ),
+        |atoms| Expr::Any(atoms),
+    )(i)
+}
+
+fn parse_not(i: &str) -> IResult<&str, Expr> {
+    map(
+        delimited(
+            char('('),
+            preceded(tag("not"), preceded(multispace1, parse_atom)),
+            char(')'),
+        ),
+        |atom| Expr::Not(atom),
     )(i)
 }
 
@@ -132,68 +160,77 @@ fn parse_char(i: &str) -> IResult<&str, Atom> {
     map(anychar, |c| Atom::Char(c))(i)
 }
 
-fn parse_line_start(i: &str) -> IResult<&str, Atom> {
-    map(alt((tag("line-start"), tag("bol"))), |_| Atom::LineStart)(i)
+fn parse_atom(i: &str) -> IResult<&str, Atom> {
+    alt((parse_class, parse_string, parse_char))(i)
 }
 
-fn parse_line_end(i: &str) -> IResult<&str, Atom> {
-    map(alt((tag("line-end"), tag("eol"))), |_| Atom::LineEnd)(i)
-}
-
-fn parse_atom(i: &str) -> IResult<&str, Expr> {
-    map(
-        alt((
-            parse_class,
-            parse_line_start,
-            parse_line_end,
-            parse_string,
-            parse_char,
-        )),
-        |a| Expr::Atom(a),
-    )(i)
-}
-
-fn parse_whitespace(i: &str) -> IResult<&str, Class> {
-    map(alt((tag("space"), tag("whitespace"), tag("white"))), |_| {
-        Class::Whitespace
+fn parse_atom_expr(i: &str) -> IResult<&str, Expr> {
+    map(alt((parse_class, parse_string, parse_char)), |a| {
+        Expr::Atom(a)
     })(i)
 }
 
-fn parse_alpha(i: &str) -> IResult<&str, Class> {
+fn parse_line_start(i: &str) -> IResult<&str, Assertion> {
+    map(alt((tag("line-start"), tag("bol"))), |_| {
+        Assertion::LineStart
+    })(i)
+}
+
+fn parse_line_end(i: &str) -> IResult<&str, Assertion> {
+    map(alt((tag("line-end"), tag("eol"))), |_| Assertion::LineEnd)(i)
+}
+
+fn parse_assertion(i: &str) -> IResult<&str, Expr> {
+    map(alt((parse_line_start, parse_line_end)), |a| {
+        Expr::Assertion(a)
+    })(i)
+}
+
+fn parse_whitespace(i: &str) -> IResult<&str, CharClass> {
+    map(alt((tag("space"), tag("whitespace"), tag("white"))), |_| {
+        CharClass::Whitespace
+    })(i)
+}
+
+fn parse_alpha(i: &str) -> IResult<&str, CharClass> {
     map(
         alt((tag("alpha"), tag("alphabetic"), tag("letter"))),
-        |_| Class::Alpha,
+        |_| CharClass::Alpha,
     )(i)
 }
 
-fn parse_digit(i: &str) -> IResult<&str, Class> {
+fn parse_digit(i: &str) -> IResult<&str, CharClass> {
     map(alt((tag("digit"), tag("numeric"), tag("num"))), |_| {
-        Class::Digit
+        CharClass::Digit
     })(i)
 }
 
-fn parse_alphanum(i: &str) -> IResult<&str, Class> {
+fn parse_alphanum(i: &str) -> IResult<&str, CharClass> {
     map(alt((tag("alnum"), tag("alphanumeric"))), |_| {
-        Class::AlphaNum
+        CharClass::AlphaNum
     })(i)
 }
 
-fn parse_hex(i: &str) -> IResult<&str, Class> {
+fn parse_hex(i: &str) -> IResult<&str, CharClass> {
     map(alt((tag("xdigit"), tag("hex-digit"), tag("hex"))), |_| {
-        Class::Hex
+        CharClass::Hex
     })(i)
 }
 
-fn parse_lowercase(i: &str) -> IResult<&str, Class> {
-    map(alt((tag("lower"), tag("lower-case"))), |_| Class::LowerCase)(i)
+fn parse_lowercase(i: &str) -> IResult<&str, CharClass> {
+    map(alt((tag("lower"), tag("lower-case"))), |_| {
+        CharClass::LowerCase
+    })(i)
 }
 
-fn parse_uppercase(i: &str) -> IResult<&str, Class> {
-    map(alt((tag("upper"), tag("upper-case"))), |_| Class::UpperCase)(i)
+fn parse_uppercase(i: &str) -> IResult<&str, CharClass> {
+    map(alt((tag("upper"), tag("upper-case"))), |_| {
+        CharClass::UpperCase
+    })(i)
 }
 
-fn parse_word(i: &str) -> IResult<&str, Class> {
-    map(alt((tag("word"), tag("wordchar"))), |_| Class::Word)(i)
+fn parse_word(i: &str) -> IResult<&str, CharClass> {
+    map(alt((tag("word"), tag("wordchar"))), |_| CharClass::Word)(i)
 }
 
 fn parse_class(i: &str) -> IResult<&str, Atom> {
@@ -208,6 +245,6 @@ fn parse_class(i: &str) -> IResult<&str, Atom> {
             parse_uppercase,
             parse_word,
         )),
-        |c| Atom::Class(c),
+        |c| Atom::CharClass(c),
     )(i)
 }

@@ -3,6 +3,8 @@
 pub enum Expr {
     /// Just this expression
     Atom(Atom),
+    /// Zero-width assertion, e.g. line end
+    Assertion(Assertion),
     /// All expressions in sequence
     Seq(Vec<Expr>),
     /// Any single one of the expressions
@@ -17,17 +19,26 @@ pub enum Expr {
     OneOrMore(Vec<Expr>),
     /// 1+, non-greedy
     OneOrMoreReluctant(Vec<Expr>),
+    /// Not the atom
+    Not(Atom),
+    /// Any character from the sets
+    Any(Vec<Atom>),
 }
 
 /// A single static element
 #[derive(Debug)]
 pub enum Atom {
-    /// A literal string
-    String(String),
     /// A single character
     Char(char),
+    /// A literal string
+    String(String),
     /// A character class
-    Class(Class),
+    CharClass(CharClass),
+}
+
+/// Zero-width assertion, e.g. line end
+#[derive(Debug)]
+pub enum Assertion {
     /// Start of a line or input
     LineStart,
     /// End of a line or input
@@ -36,7 +47,7 @@ pub enum Atom {
 
 /// A character class
 #[derive(Debug)]
-pub enum Class {
+pub enum CharClass {
     /// Any whitespace character
     Whitespace,
     /// Any alphabetic letter
