@@ -1,12 +1,9 @@
 use anyhow::Result;
 use clap::{Parser, ValueEnum};
 
-use crate::output::Output;
-use crate::output::{debug::DebugOutput, pcre::PCREOutput};
-
-mod expr;
-mod output;
-mod parser;
+use rx::convert;
+use rx::output::Output;
+use rx::output::{debug::DebugOutput, pcre::PCREOutput};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -26,15 +23,14 @@ enum OutputFormat {
     PCRE,
 }
 
-fn main() -> Result<()> {
+pub fn main() -> Result<()> {
     let args = Args::parse();
-    let (_, expr) = parser::parse(&args.expression).expect("");
 
     let out: &dyn Output = match args.output {
         OutputFormat::Debug => &DebugOutput {},
         OutputFormat::PCRE => &PCREOutput {},
     };
 
-    print!("{}", out.output(&expr)?);
+    print!("{}", convert(&args.expression, out)?);
     Ok(())
 }

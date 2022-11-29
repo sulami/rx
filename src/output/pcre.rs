@@ -1,7 +1,7 @@
 use crate::expr::{Assertion, Atom, CharClass, Expr};
 use crate::output::{Output, OutputError};
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub struct PCREOutput {}
 
 impl Output for PCREOutput {
@@ -39,6 +39,9 @@ impl PCREOutput {
                 s.push_str("?");
                 Ok(s)
             }
+            Expr::ZeroOrMore(exprs) if exprs.len() == 1 => {
+                Ok(format!("{}*", self.output_expr(exprs.first().unwrap())?))
+            }
             Expr::ZeroOrMore(exprs) => {
                 let mut s = String::from("(?:");
                 for e in exprs {
@@ -54,6 +57,9 @@ impl PCREOutput {
                 }
                 s.push_str(")*?");
                 Ok(s)
+            }
+            Expr::OneOrMore(exprs) if exprs.len() == 1 => {
+                Ok(format!("{}+", self.output_expr(exprs.first().unwrap())?))
             }
             Expr::OneOrMore(exprs) => {
                 let mut s = String::from("(?:");
@@ -117,5 +123,20 @@ impl PCREOutput {
             Assertion::LineStart => Ok("^".to_string()),
             Assertion::LineEnd => Ok("$".to_string()),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn render(expr: &Expr) -> Result<String, OutputError> {
+        PCREOutput::default().output(expr)
+    }
+
+    #[test]
+    fn string_works() -> Result<(), OutputError> {
+        assert_eq!(render(&Expr::Atom(Atom::String("foo".into())))?, "foo");
+        Ok(())
     }
 }
