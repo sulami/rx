@@ -129,6 +129,23 @@ impl PCREOutput {
                 Ok(format!("[^{}]", self.output_char_class(class)?))
             }
             Expr::Not(atom) => Ok(format!("[^{}]", self.output_atom(atom)?)),
+            Expr::Group(exprs) => {
+                let mut s = String::from("(");
+                for e in exprs {
+                    s.push_str(&self.output_expr(e)?);
+                }
+                s.push_str(")");
+                Ok(s)
+            }
+            Expr::GroupN(n, exprs) => {
+                let mut s = format!("(?<{n}>");
+                for e in exprs {
+                    s.push_str(&self.output_expr(e)?);
+                }
+                s.push_str(")");
+                Ok(s)
+            }
+            Expr::BackRef(n) => Ok(format!("\\{n}")),
         }
     }
 

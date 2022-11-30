@@ -249,3 +249,18 @@ fn test_between_count_char_class() {
 fn test_between_count_char_classes() {
     assert_eq!(render(r#"(** 2 5 lower upper)"#), r#"(?:[a-z][A-Z]){2,5}"#);
 }
+
+#[test]
+fn test_group() {
+    assert_eq!(render("(group lower)"), "([a-z])");
+}
+
+#[test]
+fn test_group_n() {
+    assert_eq!(render("(group-n 5 lower)"), "(?<5>[a-z])");
+}
+
+#[test]
+fn test_back() {
+    assert_eq!(render("(backref 5)"), r#"\5"#);
+}

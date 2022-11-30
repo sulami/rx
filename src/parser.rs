@@ -1,6 +1,6 @@
 use nom::branch::alt;
 use nom::bytes::complete::{escaped, tag};
-use nom::character::complete::{anychar, char, digit1, multispace1, none_of, one_of};
+use nom::character::complete::{anychar, char, digit1, multispace0, multispace1, none_of, one_of};
 use nom::combinator::{eof, map};
 use nom::multi::many1;
 use nom::sequence::{delimited, preceded, terminated, tuple};
@@ -27,6 +27,9 @@ fn parse_expr(i: &str) -> IResult<&str, Expr> {
         parse_not,
         parse_any,
         parse_assertion,
+        parse_group,
+        parse_group_n,
+        parse_backref,
         parse_atom_expr,
     ))(i)
 }
@@ -207,6 +210,43 @@ fn parse_between(i: &str) -> IResult<&str, Expr> {
                 exprs,
             )
         },
+    )(i)
+}
+
+fn parse_group(i: &str) -> IResult<&str, Expr> {
+    map(
+        delimited(
+            tuple((char('('), alt((tag("group"), tag("submatch"))))),
+            many1(preceded(multispace1, parse_expr)),
+            tuple((multispace0, char(')'))),
+        ),
+        |exprs| Expr::Group(exprs),
+    )(i)
+}
+
+fn parse_group_n(i: &str) -> IResult<&str, Expr> {
+    map(
+        delimited(
+            tuple((
+                char('('),
+                alt((tag("group-n"), tag("submatch-n"))),
+                multispace1,
+            )),
+            tuple((digit1, many1(preceded(multispace1, parse_expr)))),
+            tuple((multispace0, char(')'))),
+        ),
+        |(n, exprs)| Expr::GroupN(n.parse().expect("failed to parse group identifier"), exprs),
+    )(i)
+}
+
+fn parse_backref(i: &str) -> IResult<&str, Expr> {
+    map(
+        delimited(
+            tuple((char('('), tag("backref"), multispace1)),
+            digit1,
+            tuple((multispace0, char(')'))),
+        ),
+        |n: &str| Expr::BackRef(n.parse().expect("failed to parse backref identifier")),
     )(i)
 }
 

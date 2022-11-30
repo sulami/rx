@@ -29,6 +29,12 @@ pub enum Expr {
     Not(Atom),
     /// Any character from the sets
     Any(Vec<Atom>),
+    /// A capture group
+    Group(Vec<Expr>),
+    /// A capture group numbered N
+    GroupN(u32, Vec<Expr>),
+    /// The text captured in group N
+    BackRef(u32),
 }
 
 /// A single static element
