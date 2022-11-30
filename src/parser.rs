@@ -37,12 +37,13 @@ fn parse_expr(i: &str) -> IResult<&str, Expr> {
 fn parse_seq(i: &str) -> IResult<&str, Expr> {
     map(
         delimited(
-            char('('),
-            preceded(
+            tuple((
+                char('('),
+                multispace0,
                 alt((tag("seq"), tag(":"), tag("sequence"), tag("and"))),
-                many1(preceded(multispace1, parse_expr)),
-            ),
-            char(')'),
+            )),
+            many1(preceded(multispace1, parse_expr)),
+            tuple((multispace0, char(')'))),
         ),
         |exprs| Expr::Seq(exprs),
     )(i)
@@ -51,12 +52,9 @@ fn parse_seq(i: &str) -> IResult<&str, Expr> {
 fn parse_or(i: &str) -> IResult<&str, Expr> {
     map(
         delimited(
-            char('('),
-            preceded(
-                alt((tag("or"), tag("|"))),
-                many1(preceded(multispace1, parse_expr)),
-            ),
-            char(')'),
+            tuple((char('('), multispace0, alt((tag("or"), tag("|"))))),
+            many1(preceded(multispace1, parse_expr)),
+            tuple((multispace0, char(')'))),
         ),
         |exprs| Expr::Or(exprs),
     )(i)
@@ -65,12 +63,13 @@ fn parse_or(i: &str) -> IResult<&str, Expr> {
 fn parse_any(i: &str) -> IResult<&str, Expr> {
     map(
         delimited(
-            char('('),
-            preceded(
+            tuple((
+                char('('),
+                multispace0,
                 alt((tag("any"), tag("in"), tag("char"))),
-                many1(preceded(multispace1, parse_atom)),
-            ),
-            char(')'),
+            )),
+            many1(preceded(multispace1, parse_atom)),
+            tuple((multispace0, char(')'))),
         ),
         |atoms| Expr::Any(atoms),
     )(i)
@@ -79,9 +78,9 @@ fn parse_any(i: &str) -> IResult<&str, Expr> {
 fn parse_not(i: &str) -> IResult<&str, Expr> {
     map(
         delimited(
-            char('('),
-            preceded(tag("not"), preceded(multispace1, parse_atom)),
-            char(')'),
+            tuple((char('('), multispace0, tag("not"), multispace1)),
+            parse_atom,
+            tuple((multispace0, char(')'))),
         ),
         |atom| Expr::Not(atom),
     )(i)
@@ -90,12 +89,13 @@ fn parse_not(i: &str) -> IResult<&str, Expr> {
 fn parse_zero_or_one(i: &str) -> IResult<&str, Expr> {
     map(
         delimited(
-            char('('),
-            preceded(
+            tuple((
+                char('('),
+                multispace0,
                 alt((tag("zero-or-one"), tag("opt"), tag("optional"))),
-                many1(preceded(multispace1, parse_expr)),
-            ),
-            char(')'),
+            )),
+            many1(preceded(multispace1, parse_expr)),
+            tuple((multispace0, char(')'))),
         ),
         |exprs| Expr::ZeroOrOne(exprs),
     )(i)
@@ -104,12 +104,13 @@ fn parse_zero_or_one(i: &str) -> IResult<&str, Expr> {
 fn parse_zero_or_more(i: &str) -> IResult<&str, Expr> {
     map(
         delimited(
-            char('('),
-            preceded(
+            tuple((
+                char('('),
+                multispace0,
                 alt((tag("zero-or-more"), tag("0+"), tag("*"))),
-                many1(preceded(multispace1, parse_expr)),
-            ),
-            char(')'),
+            )),
+            many1(preceded(multispace1, parse_expr)),
+            tuple((multispace0, char(')'))),
         ),
         |exprs| Expr::ZeroOrMore(exprs),
     )(i)
@@ -118,9 +119,9 @@ fn parse_zero_or_more(i: &str) -> IResult<&str, Expr> {
 fn parse_zero_or_more_reluctant(i: &str) -> IResult<&str, Expr> {
     map(
         delimited(
-            char('('),
-            preceded(tag("*?"), many1(preceded(multispace1, parse_expr))),
-            char(')'),
+            tuple((char('('), multispace0, tag("*?"))),
+            many1(preceded(multispace1, parse_expr)),
+            tuple((multispace0, char(')'))),
         ),
         |exprs| Expr::ZeroOrMoreReluctant(exprs),
     )(i)
@@ -129,12 +130,13 @@ fn parse_zero_or_more_reluctant(i: &str) -> IResult<&str, Expr> {
 fn parse_one_or_more(i: &str) -> IResult<&str, Expr> {
     map(
         delimited(
-            char('('),
-            preceded(
+            tuple((
+                char('('),
+                multispace0,
                 alt((tag("one-or-more"), tag("1+"), tag("+"))),
-                many1(preceded(multispace1, parse_expr)),
-            ),
-            char(')'),
+            )),
+            many1(preceded(multispace1, parse_expr)),
+            tuple((multispace0, char(')'))),
         ),
         |exprs| Expr::OneOrMore(exprs),
     )(i)
@@ -143,9 +145,9 @@ fn parse_one_or_more(i: &str) -> IResult<&str, Expr> {
 fn parse_one_or_more_reluctant(i: &str) -> IResult<&str, Expr> {
     map(
         delimited(
-            char('('),
+            tuple((char('('), multispace0)),
             preceded(tag("+?"), many1(preceded(multispace1, parse_expr))),
-            char(')'),
+            tuple((multispace0, char(')'))),
         ),
         |exprs| Expr::OneOrMoreReluctant(exprs),
     )(i)
@@ -154,12 +156,9 @@ fn parse_one_or_more_reluctant(i: &str) -> IResult<&str, Expr> {
 fn parse_exactly(i: &str) -> IResult<&str, Expr> {
     map(
         delimited(
-            char('('),
-            preceded(
-                tuple((tag("="), multispace1)),
-                tuple((digit1, many1(preceded(multispace1, parse_expr)))),
-            ),
-            char(')'),
+            tuple((char('('), multispace0, tag("="), multispace1)),
+            tuple((digit1, many1(preceded(multispace1, parse_expr)))),
+            tuple((multispace0, char(')'))),
         ),
         |(n, exprs)| {
             Expr::Exactly(
@@ -173,12 +172,9 @@ fn parse_exactly(i: &str) -> IResult<&str, Expr> {
 fn parse_at_least(i: &str) -> IResult<&str, Expr> {
     map(
         delimited(
-            char('('),
-            preceded(
-                tuple((tag(">="), multispace1)),
-                tuple((digit1, many1(preceded(multispace1, parse_expr)))),
-            ),
-            char(')'),
+            tuple((char('('), multispace0, tag(">="), multispace1)),
+            tuple((digit1, many1(preceded(multispace1, parse_expr)))),
+            tuple((multispace0, char(')'))),
         ),
         |(n, exprs)| {
             Expr::AtLeast(
@@ -192,16 +188,13 @@ fn parse_at_least(i: &str) -> IResult<&str, Expr> {
 fn parse_between(i: &str) -> IResult<&str, Expr> {
     map(
         delimited(
-            char('('),
-            preceded(
-                tuple((tag("**"), multispace1)),
-                tuple((
-                    digit1,
-                    preceded(multispace1, digit1),
-                    many1(preceded(multispace1, parse_expr)),
-                )),
-            ),
-            char(')'),
+            tuple((char('('), multispace0, tag("**"), multispace1)),
+            tuple((
+                digit1,
+                preceded(multispace1, digit1),
+                many1(preceded(multispace1, parse_expr)),
+            )),
+            tuple((multispace0, char(')'))),
         ),
         |(n, m, exprs)| {
             Expr::Between(
@@ -216,7 +209,7 @@ fn parse_between(i: &str) -> IResult<&str, Expr> {
 fn parse_group(i: &str) -> IResult<&str, Expr> {
     map(
         delimited(
-            tuple((char('('), alt((tag("group"), tag("submatch"))))),
+            tuple((char('('), multispace0, alt((tag("group"), tag("submatch"))))),
             many1(preceded(multispace1, parse_expr)),
             tuple((multispace0, char(')'))),
         ),
@@ -229,6 +222,7 @@ fn parse_group_n(i: &str) -> IResult<&str, Expr> {
         delimited(
             tuple((
                 char('('),
+                multispace0,
                 alt((tag("group-n"), tag("submatch-n"))),
                 multispace1,
             )),
@@ -242,7 +236,7 @@ fn parse_group_n(i: &str) -> IResult<&str, Expr> {
 fn parse_backref(i: &str) -> IResult<&str, Expr> {
     map(
         delimited(
-            tuple((char('('), tag("backref"), multispace1)),
+            tuple((char('('), multispace0, tag("backref"), multispace1)),
             digit1,
             tuple((multispace0, char(')'))),
         ),
