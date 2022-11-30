@@ -1,9 +1,9 @@
 use nom::branch::alt;
 use nom::bytes::complete::{escaped, tag};
-use nom::character::complete::{anychar, char, multispace1, none_of, one_of};
+use nom::character::complete::{anychar, char, digit1, multispace1, none_of, one_of};
 use nom::combinator::{eof, map};
 use nom::multi::many1;
-use nom::sequence::{delimited, preceded, terminated};
+use nom::sequence::{delimited, preceded, terminated, tuple};
 use nom::IResult;
 
 use crate::expr::{Assertion, Atom, CharClass, Expr};
@@ -21,6 +21,9 @@ fn parse_expr(i: &str) -> IResult<&str, Expr> {
         parse_zero_or_more_reluctant,
         parse_one_or_more,
         parse_one_or_more_reluctant,
+        parse_exactly,
+        parse_at_least,
+        parse_between,
         parse_not,
         parse_any,
         parse_assertion,
@@ -145,6 +148,68 @@ fn parse_one_or_more_reluctant(i: &str) -> IResult<&str, Expr> {
     )(i)
 }
 
+fn parse_exactly(i: &str) -> IResult<&str, Expr> {
+    map(
+        delimited(
+            char('('),
+            preceded(
+                tuple((tag("="), multispace1)),
+                tuple((digit1, many1(preceded(multispace1, parse_expr)))),
+            ),
+            char(')'),
+        ),
+        |(n, exprs)| {
+            Expr::Exactly(
+                n.parse().expect("failed to parse exactly quantifier"),
+                exprs,
+            )
+        },
+    )(i)
+}
+
+fn parse_at_least(i: &str) -> IResult<&str, Expr> {
+    map(
+        delimited(
+            char('('),
+            preceded(
+                tuple((tag(">="), multispace1)),
+                tuple((digit1, many1(preceded(multispace1, parse_expr)))),
+            ),
+            char(')'),
+        ),
+        |(n, exprs)| {
+            Expr::AtLeast(
+                n.parse().expect("failed to parse exactly quantifier"),
+                exprs,
+            )
+        },
+    )(i)
+}
+
+fn parse_between(i: &str) -> IResult<&str, Expr> {
+    map(
+        delimited(
+            char('('),
+            preceded(
+                tuple((tag("**"), multispace1)),
+                tuple((
+                    digit1,
+                    preceded(multispace1, digit1),
+                    many1(preceded(multispace1, parse_expr)),
+                )),
+            ),
+            char(')'),
+        ),
+        |(n, m, exprs)| {
+            Expr::Between(
+                n.parse().expect("failed to parse exactly quantifier"),
+                m.parse().expect("failed to parse exactly quantifier"),
+                exprs,
+            )
+        },
+    )(i)
+}
+
 fn parse_string(i: &str) -> IResult<&str, Atom> {
     map(
         delimited(
@@ -180,10 +245,24 @@ fn parse_line_end(i: &str) -> IResult<&str, Assertion> {
     map(alt((tag("line-end"), tag("eol"))), |_| Assertion::LineEnd)(i)
 }
 
+fn parse_word_boundary(i: &str) -> IResult<&str, Assertion> {
+    map(tag("word-boundary"), |_| Assertion::WordBoundary)(i)
+}
+
+fn parse_not_word_boundary(i: &str) -> IResult<&str, Assertion> {
+    map(tag("not-word-boundary"), |_| Assertion::NotWordBoundary)(i)
+}
+
 fn parse_assertion(i: &str) -> IResult<&str, Expr> {
-    map(alt((parse_line_start, parse_line_end)), |a| {
-        Expr::Assertion(a)
-    })(i)
+    map(
+        alt((
+            parse_line_start,
+            parse_line_end,
+            parse_word_boundary,
+            parse_not_word_boundary,
+        )),
+        |a| Expr::Assertion(a),
+    )(i)
 }
 
 fn parse_whitespace(i: &str) -> IResult<&str, CharClass> {

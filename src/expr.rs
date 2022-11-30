@@ -19,6 +19,12 @@ pub enum Expr {
     OneOrMore(Vec<Expr>),
     /// 1+, non-greedy
     OneOrMoreReluctant(Vec<Expr>),
+    /// Match exactly N times
+    Exactly(u32, Vec<Expr>),
+    /// Match at least N times
+    AtLeast(u32, Vec<Expr>),
+    /// Match between N and M times
+    Between(u32, u32, Vec<Expr>),
     /// Not the atom
     Not(Atom),
     /// Any character from the sets
@@ -43,6 +49,10 @@ pub enum Assertion {
     LineStart,
     /// End of a line or input
     LineEnd,
+    /// Beginning or end of a word
+    WordBoundary,
+    /// Not the beginning or end of a word
+    NotWordBoundary,
 }
 
 /// A character class

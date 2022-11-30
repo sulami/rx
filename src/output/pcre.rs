@@ -17,14 +17,19 @@ impl PCREOutput {
             Expr::Seq(exprs) => {
                 let mut s = String::new();
                 for e in exprs {
-                    s.push_str(&self.output_expr(e)?);
+                    // NB In a sequence, we need to avoid mushing
+                    // together several tokens that will then get
+                    // affected by a postfix modifier.
+                    match e {
+                        Expr::Atom(_) => s.push_str(&self.output_expr(e)?),
+                        Expr::Assertion(_) => s.push_str(&self.output_expr(e)?),
+                        _ => s.push_str(&format!("(?:{})", self.output_expr(e)?)),
+                    }
                 }
                 Ok(s)
             }
+            Expr::Or(exprs) if exprs.len() == 1 => self.output_expr(exprs.first().expect("")),
             Expr::Or(exprs) => {
-                if exprs.len() == 1 {
-                    return self.output_expr(exprs.first().expect(""));
-                }
                 let mut s = format!("{}|", self.output_expr(exprs.first().expect(""))?);
                 for e in exprs[1..].iter() {
                     s.push_str(&self.output_expr(e)?);
@@ -50,6 +55,9 @@ impl PCREOutput {
                 s.push_str(")*");
                 Ok(s)
             }
+            Expr::ZeroOrMoreReluctant(exprs) if exprs.len() == 1 => {
+                Ok(format!("{}*?", self.output_expr(exprs.first().unwrap())?))
+            }
             Expr::ZeroOrMoreReluctant(exprs) => {
                 let mut s = String::from("(?:");
                 for e in exprs {
@@ -69,12 +77,39 @@ impl PCREOutput {
                 s.push_str(")+");
                 Ok(s)
             }
+            Expr::OneOrMoreReluctant(exprs) if exprs.len() == 1 => {
+                Ok(format!("{}+?", self.output_expr(exprs.first().unwrap())?))
+            }
             Expr::OneOrMoreReluctant(exprs) => {
                 let mut s = String::from("(?:");
                 for e in exprs {
                     s.push_str(&self.output_expr(e)?);
                 }
                 s.push_str(")+?");
+                Ok(s)
+            }
+            Expr::Exactly(n, exprs) => {
+                let mut s = String::from("(?:");
+                for e in exprs {
+                    s.push_str(&self.output_expr(e)?);
+                }
+                s.push_str(&format!("){{{n}}}"));
+                Ok(s)
+            }
+            Expr::AtLeast(n, exprs) => {
+                let mut s = String::from("(?:");
+                for e in exprs {
+                    s.push_str(&self.output_expr(e)?);
+                }
+                s.push_str(&format!("){{{n},}}"));
+                Ok(s)
+            }
+            Expr::Between(n, m, exprs) => {
+                let mut s = String::from("(?:");
+                for e in exprs {
+                    s.push_str(&self.output_expr(e)?);
+                }
+                s.push_str(&format!("){{{n},{m}}}"));
                 Ok(s)
             }
             Expr::Assertion(assertion) => self.output_assertion(assertion),
@@ -122,6 +157,8 @@ impl PCREOutput {
         match assertion {
             Assertion::LineStart => Ok("^".to_string()),
             Assertion::LineEnd => Ok("$".to_string()),
+            Assertion::WordBoundary => Ok("\\b".to_string()),
+            Assertion::NotWordBoundary => Ok("\\B".to_string()),
         }
     }
 }
