@@ -145,7 +145,13 @@ impl PCREOutput {
                 s.push_str(")");
                 Ok(s)
             }
-            Expr::BackRef(n) => Ok(format!("\\{n}")),
+            Expr::BackRef(n) => {
+                if n.chars().all(|c| c.is_digit(10)) {
+                    Ok(format!("\\{n}"))
+                } else {
+                    Ok(format!("${{{n}}}"))
+                }
+            }
         }
     }
 

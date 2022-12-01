@@ -1,8 +1,8 @@
 use rx::convert;
-use rx::output::javascript::JavascriptOutput;
+use rx::output::pcre2::PCRE2Output;
 
 fn render(input: &str) -> String {
-    let output = &JavascriptOutput::default();
+    let output = &PCRE2Output::default();
     convert(input, output).expect("failed to convert")
 }
 
@@ -256,18 +256,16 @@ fn test_group() {
 }
 
 #[test]
-#[should_panic(expected = "not supported")]
 fn test_group_n() {
-    render("(group-n 5 lower)");
+    assert_eq!(render("(group-n 5 lower)"), "(?<n5>[a-z])");
 }
 
 #[test]
 fn test_backref_numeric() {
-    assert_eq!(render("(backref 5)"), r#"\5"#);
+    assert_eq!(render("(backref 5)"), r#"$5"#);
 }
 
 #[test]
-#[should_panic(expected = "not supported")]
 fn test_backref_name() {
-    render(r#"(backref "foo")"#);
+    assert_eq!(render(r#"(backref "foo")"#), r#"${foo}"#);
 }

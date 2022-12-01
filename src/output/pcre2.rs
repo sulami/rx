@@ -2,15 +2,15 @@ use crate::expr::{Assertion, Atom, CharClass, Expr};
 use crate::output::{Output, OutputError};
 
 #[derive(Copy, Clone, Default)]
-pub struct JavascriptOutput {}
+pub struct PCRE2Output {}
 
-impl Output for JavascriptOutput {
+impl Output for PCRE2Output {
     fn output(&self, expr: &Expr) -> Result<String, OutputError> {
         self.output_expr(expr)
     }
 }
 
-impl JavascriptOutput {
+impl PCRE2Output {
     fn output_expr(&self, expr: &Expr) -> Result<String, OutputError> {
         match expr {
             Expr::Atom(c) => self.output_atom(c),
@@ -137,12 +137,19 @@ impl JavascriptOutput {
                 s.push_str(")");
                 Ok(s)
             }
-            Expr::GroupN(_, _) => Err(OutputError::FeatureNotSupported),
+            Expr::GroupN(n, exprs) => {
+                let mut s = format!("(?<n{n}>");
+                for e in exprs {
+                    s.push_str(&self.output_expr(e)?);
+                }
+                s.push_str(")");
+                Ok(s)
+            }
             Expr::BackRef(n) => {
                 if n.chars().all(|c| c.is_digit(10)) {
-                    Ok(format!("\\{n}"))
+                    Ok(format!("${n}"))
                 } else {
-                    Err(OutputError::FeatureNotSupported)
+                    Ok(format!("${{{n}}}"))
                 }
             }
         }

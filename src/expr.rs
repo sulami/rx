@@ -34,7 +34,7 @@ pub enum Expr {
     /// A capture group numbered N
     GroupN(u32, Vec<Expr>),
     /// The text captured in group N
-    BackRef(u32),
+    BackRef(String),
 }
 
 /// A single static element

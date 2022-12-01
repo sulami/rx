@@ -237,10 +237,17 @@ fn parse_backref(i: &str) -> IResult<&str, Expr> {
     map(
         delimited(
             tuple((char('('), multispace0, tag("backref"), multispace1)),
-            digit1,
+            alt((
+                digit1,
+                delimited(
+                    char('"'),
+                    escaped(none_of("\\\""), '\\', one_of(r#""\"#)),
+                    char('"'),
+                ),
+            )),
             tuple((multispace0, char(')'))),
         ),
-        |n: &str| Expr::BackRef(n.parse().expect("failed to parse backref identifier")),
+        |n: &str| Expr::BackRef(n.to_string()),
     )(i)
 }
 

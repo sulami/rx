@@ -3,7 +3,9 @@ use clap::{Parser, ValueEnum};
 
 use rx::convert;
 use rx::output::Output;
-use rx::output::{debug::DebugOutput, javascript::JavascriptOutput, pcre::PCREOutput};
+use rx::output::{
+    debug::DebugOutput, javascript::JavascriptOutput, pcre::PCREOutput, pcre2::PCRE2Output,
+};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -21,6 +23,8 @@ enum OutputFormat {
     Debug,
     /// Perl Compatible Regular Expression
     PCRE,
+    /// Perl Compatible Regular Expression, version 2
+    PCRE2,
     /// Javascript
     JS,
 }
@@ -31,6 +35,7 @@ pub fn main() -> Result<()> {
     let out: &dyn Output = match args.output {
         OutputFormat::Debug => &DebugOutput {},
         OutputFormat::PCRE => &PCREOutput {},
+        OutputFormat::PCRE2 => &PCRE2Output {},
         OutputFormat::JS => &JavascriptOutput {},
     };
 

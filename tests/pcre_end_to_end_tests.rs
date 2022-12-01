@@ -261,6 +261,11 @@ fn test_group_n() {
 }
 
 #[test]
-fn test_back() {
+fn test_backref_numeric() {
     assert_eq!(render("(backref 5)"), r#"\5"#);
+}
+
+#[test]
+fn test_backref_name() {
+    assert_eq!(render(r#"(backref "foo")"#), r#"${foo}"#);
 }

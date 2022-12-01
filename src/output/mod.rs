@@ -3,6 +3,7 @@ use crate::expr::Expr;
 pub mod debug;
 pub mod javascript;
 pub mod pcre;
+pub mod pcre2;
 
 pub trait Output {
     fn output(&self, expr: &Expr) -> Result<String, OutputError>;
