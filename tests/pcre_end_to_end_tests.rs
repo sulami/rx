@@ -257,7 +257,7 @@ fn test_group() {
 
 #[test]
 fn test_group_n() {
-    assert_eq!(render("(group-n 5 lower)"), "(?<5>[a-z])");
+    assert_eq!(render("(group-n 5 lower)"), "(?<n5>[a-z])");
 }
 
 #[test]

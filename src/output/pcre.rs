@@ -138,7 +138,7 @@ impl PCREOutput {
                 Ok(s)
             }
             Expr::GroupN(n, exprs) => {
-                let mut s = format!("(?<{n}>");
+                let mut s = format!("(?<n{n}>");
                 for e in exprs {
                     s.push_str(&self.output_expr(e)?);
                 }
@@ -177,20 +177,5 @@ impl PCREOutput {
             Assertion::WordBoundary => Ok("\\b".to_string()),
             Assertion::NotWordBoundary => Ok("\\B".to_string()),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn render(expr: &Expr) -> Result<String, OutputError> {
-        PCREOutput::default().output(expr)
-    }
-
-    #[test]
-    fn string_works() -> Result<(), OutputError> {
-        assert_eq!(render(&Expr::Atom(Atom::String("foo".into())))?, "foo");
-        Ok(())
     }
 }
