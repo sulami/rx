@@ -1,6 +1,7 @@
 use crate::expr::Expr;
 
 pub mod debug;
+pub mod javascript;
 pub mod pcre;
 
 pub trait Output {
@@ -8,12 +9,16 @@ pub trait Output {
 }
 
 #[derive(Debug)]
-pub enum OutputError {}
+pub enum OutputError {
+    FeatureNotSupported,
+}
 
 impl std::error::Error for OutputError {}
 
 impl std::fmt::Display for OutputError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "feature not supported by output format")
+        match self {
+            Self::FeatureNotSupported => write!(f, "feature is not supported by output format"),
+        }
     }
 }
