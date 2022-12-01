@@ -11,7 +11,7 @@ pub trait Output {
 
 #[derive(Debug)]
 pub enum OutputError {
-    FeatureNotSupported,
+    FeatureNotSupported(&'static str),
 }
 
 impl std::error::Error for OutputError {}
@@ -19,7 +19,9 @@ impl std::error::Error for OutputError {}
 impl std::fmt::Display for OutputError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Self::FeatureNotSupported => write!(f, "feature is not supported by output format"),
+            Self::FeatureNotSupported(feat) => {
+                write!(f, "feature is not supported by output format: {feat}")
+            }
         }
     }
 }

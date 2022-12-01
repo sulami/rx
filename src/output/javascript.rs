@@ -137,12 +137,12 @@ impl JavascriptOutput {
                 s.push_str(")");
                 Ok(s)
             }
-            Expr::GroupN(_, _) => Err(OutputError::FeatureNotSupported),
+            Expr::GroupN(_, _) => Err(OutputError::FeatureNotSupported("named capture groups")),
             Expr::BackRef(n) => {
                 if n.chars().all(|c| c.is_digit(10)) {
                     Ok(format!("\\{n}"))
                 } else {
-                    Err(OutputError::FeatureNotSupported)
+                    Err(OutputError::FeatureNotSupported("non-numerical backrefs"))
                 }
             }
         }
