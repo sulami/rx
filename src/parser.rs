@@ -45,7 +45,7 @@ fn parse_seq(i: &str) -> IResult<&str, Expr> {
             many1(preceded(multispace1, parse_expr)),
             tuple((multispace0, char(')'))),
         ),
-        |exprs| Expr::Seq(exprs),
+        Expr::Seq,
     )(i)
 }
 
@@ -56,7 +56,7 @@ fn parse_or(i: &str) -> IResult<&str, Expr> {
             many1(preceded(multispace1, parse_expr)),
             tuple((multispace0, char(')'))),
         ),
-        |exprs| Expr::Or(exprs),
+        Expr::Or,
     )(i)
 }
 
@@ -71,7 +71,7 @@ fn parse_any(i: &str) -> IResult<&str, Expr> {
             many1(preceded(multispace1, parse_atom)),
             tuple((multispace0, char(')'))),
         ),
-        |atoms| Expr::Any(atoms),
+        Expr::Any,
     )(i)
 }
 
@@ -82,7 +82,7 @@ fn parse_not(i: &str) -> IResult<&str, Expr> {
             parse_atom,
             tuple((multispace0, char(')'))),
         ),
-        |atom| Expr::Not(atom),
+        Expr::Not,
     )(i)
 }
 
@@ -97,7 +97,7 @@ fn parse_zero_or_one(i: &str) -> IResult<&str, Expr> {
             many1(preceded(multispace1, parse_expr)),
             tuple((multispace0, char(')'))),
         ),
-        |exprs| Expr::ZeroOrOne(exprs),
+        Expr::ZeroOrOne,
     )(i)
 }
 
@@ -112,7 +112,7 @@ fn parse_zero_or_more(i: &str) -> IResult<&str, Expr> {
             many1(preceded(multispace1, parse_expr)),
             tuple((multispace0, char(')'))),
         ),
-        |exprs| Expr::ZeroOrMore(exprs),
+        Expr::ZeroOrMore,
     )(i)
 }
 
@@ -123,7 +123,7 @@ fn parse_zero_or_more_reluctant(i: &str) -> IResult<&str, Expr> {
             many1(preceded(multispace1, parse_expr)),
             tuple((multispace0, char(')'))),
         ),
-        |exprs| Expr::ZeroOrMoreReluctant(exprs),
+        Expr::ZeroOrMoreReluctant,
     )(i)
 }
 
@@ -138,7 +138,7 @@ fn parse_one_or_more(i: &str) -> IResult<&str, Expr> {
             many1(preceded(multispace1, parse_expr)),
             tuple((multispace0, char(')'))),
         ),
-        |exprs| Expr::OneOrMore(exprs),
+        Expr::OneOrMore,
     )(i)
 }
 
@@ -149,7 +149,7 @@ fn parse_one_or_more_reluctant(i: &str) -> IResult<&str, Expr> {
             preceded(tag("+?"), many1(preceded(multispace1, parse_expr))),
             tuple((multispace0, char(')'))),
         ),
-        |exprs| Expr::OneOrMoreReluctant(exprs),
+        Expr::OneOrMoreReluctant,
     )(i)
 }
 
@@ -213,7 +213,7 @@ fn parse_group(i: &str) -> IResult<&str, Expr> {
             many1(preceded(multispace1, parse_expr)),
             tuple((multispace0, char(')'))),
         ),
-        |exprs| Expr::Group(exprs),
+        Expr::Group,
     )(i)
 }
 
@@ -263,7 +263,7 @@ fn parse_string(i: &str) -> IResult<&str, Atom> {
 }
 
 fn parse_char(i: &str) -> IResult<&str, Atom> {
-    map(anychar, |c| Atom::Char(c))(i)
+    map(anychar, Atom::Char)(i)
 }
 
 fn parse_atom(i: &str) -> IResult<&str, Atom> {
@@ -302,7 +302,7 @@ fn parse_assertion(i: &str) -> IResult<&str, Expr> {
             parse_word_boundary,
             parse_not_word_boundary,
         )),
-        |a| Expr::Assertion(a),
+        Expr::Assertion,
     )(i)
 }
 
@@ -365,6 +365,6 @@ fn parse_class(i: &str) -> IResult<&str, Atom> {
             parse_uppercase,
             parse_word,
         )),
-        |c| Atom::CharClass(c),
+        Atom::CharClass,
     )(i)
 }

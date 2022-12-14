@@ -41,7 +41,7 @@ impl PCRE2Output {
                 for e in exprs {
                     s.push_str(&self.output_expr(e)?);
                 }
-                s.push_str("?");
+                s.push('?');
                 Ok(s)
             }
             Expr::ZeroOrMore(exprs) if exprs.len() == 1 => {
@@ -122,7 +122,7 @@ impl PCRE2Output {
                         s.push_str(&self.output_atom(a)?);
                     }
                 }
-                s.push_str("]");
+                s.push(']');
                 Ok(s)
             }
             Expr::Not(Atom::CharClass(class)) => {
@@ -134,7 +134,7 @@ impl PCRE2Output {
                 for e in exprs {
                     s.push_str(&self.output_expr(e)?);
                 }
-                s.push_str(")");
+                s.push(')');
                 Ok(s)
             }
             Expr::GroupN(n, exprs) => {
@@ -142,11 +142,11 @@ impl PCRE2Output {
                 for e in exprs {
                     s.push_str(&self.output_expr(e)?);
                 }
-                s.push_str(")");
+                s.push(')');
                 Ok(s)
             }
             Expr::BackRef(n) => {
-                if n.chars().all(|c| c.is_digit(10)) {
+                if n.chars().all(|c| c.is_ascii_digit()) {
                     Ok(format!("${n}"))
                 } else {
                     Ok(format!("${{{n}}}"))
